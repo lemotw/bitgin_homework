@@ -3,6 +3,8 @@ package main
 import (
 	"BitginHomework/config"
 	"BitginHomework/database"
+	"BitginHomework/middleware"
+	"BitginHomework/model"
 	"BitginHomework/router"
 	"database/sql"
 	"log"
@@ -27,8 +29,27 @@ func main() {
 	// set router
 	ginRouter := gin.Default()
 
-	ginRouter.POST("/login", router.Login)
-	ginRouter.POST("/signup", router.SignUp)
+	ginRouter.POST("/test", middleware.WithContext, middleware.WithUser, func(c *gin.Context) {
+		user, userExist := c.Get("user")
+		if !userExist {
+			c.JSON(500, gin.H{
+				"status":  500,
+				"message": "user get problem",
+			})
+		}
+
+		c.JSON(200, gin.H{
+			"status": 200,
+			"user":   user.(*model.User),
+		})
+	})
+	ginRouter.POST("/login", middleware.WithContext, router.Login)
+	ginRouter.POST("/signup", middleware.WithContext, router.SignUp)
+	ginRouter.GET("/discount", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"dis": model.USERROLE_DISCOUNT,
+		})
+	})
 
 	ginRouter.Run()
 }

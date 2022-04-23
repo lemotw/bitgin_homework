@@ -4,7 +4,6 @@ import (
 	"BitginHomework/database"
 	"BitginHomework/model"
 	"BitginHomework/service/auth"
-	"context"
 	"log"
 	"time"
 
@@ -28,8 +27,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	ctx := context.Background()
-	signStr, err := auth.SignUser(ctx, loginJSON.Email, loginJSON.Password)
+	ctx := getContext(c)
+	signStr, err := auth.SignUser(*ctx, loginJSON.Email, loginJSON.Password)
 	if err != nil {
 		c.JSON(401, gin.H{
 			"status":  401,
@@ -79,8 +78,8 @@ func SignUp(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	ctx := context.Background()
-	err = user.Insert(ctx, database.GetDB())
+	ctx := getContext(c)
+	err = user.Insert(*ctx, database.GetDB())
 	if err != nil {
 		log.Println(err.Error())
 		c.JSON(500, gin.H{
