@@ -22,8 +22,8 @@ func (tc *TradeContext) Apply(ctx context.Context, u model.User, balance model.U
 		UserID:      u.ID,
 		BalanceDiff: cost,
 		PointDiff:   point,
-		Balance:     balance.Balance + cost,
-		Point:       balance.Point + point,
+		Balance:     balance.Balance,
+		Point:       balance.Point,
 	}
 	// event loop
 	for _, event := range tc.EventList {
@@ -33,9 +33,17 @@ func (tc *TradeContext) Apply(ctx context.Context, u model.User, balance model.U
 	}
 
 	// balance broken
-	if record.Balance < 0 {
+	if record.BalanceDiff+balance.Balance < 0 {
 		return errors.New("balance not enough")
 	}
+
+	// point broken
+	if record.PointDiff+balance.Point < 0 {
+		return errors.New("point not enough")
+	}
+
+	record.Balance = balance.Balance + record.BalanceDiff
+	record.Point = balance.Point + record.PointDiff
 
 	tc.tradeRecord = record
 	return nil

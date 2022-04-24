@@ -70,3 +70,7 @@ func DepositeInBalance(c *gin.Context) {
 		"status": 200,
 	})
 }
+
+// pay api
+func PayByBalance(c *gin.Context) {
+}
