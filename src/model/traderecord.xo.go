@@ -10,12 +10,14 @@ import (
 
 // TradeRecord represents a row from 'bitgin.trade_record'.
 type TradeRecord struct {
-	ID        int            `json:"id"`         // id
-	UserID    int            `json:"user_id"`    // user_id
-	Cost      float64        `json:"cost"`       // cost
-	CutFlag   bool           `json:"cut_flag"`   // cut_flag
-	Comment   sql.NullString `json:"comment"`    // comment
-	CreatedAt time.Time      `json:"created_at"` // created_at
+	ID          int            `json:"id"`           // id
+	UserID      int            `json:"user_id"`      // user_id
+	BalanceDiff float64        `json:"balance_diff"` // balance_diff
+	PointDiff   int            `json:"point_diff"`   // point_diff
+	Balance     float64        `json:"balance"`      // balance
+	Point       int            `json:"point"`        // point
+	Comment     sql.NullString `json:"comment"`      // comment
+	CreatedAt   time.Time      `json:"created_at"`   // created_at
 	// xo fields
 	_exists, _deleted bool
 }
@@ -41,13 +43,14 @@ func (tr *TradeRecord) Insert(ctx context.Context, db DB) error {
 	}
 	// insert (primary key generated and returned by database)
 	const sqlstr = `INSERT INTO bitgin.trade_record (` +
-		`user_id, cost, cut_flag, comment, created_at` +
+		`user_id, balance_diff, point_diff, balance, point, comment, created_at` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?, ?, ?, ?` +
 		`)`
 	// run
-	logf(sqlstr, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt)
-	res, err := db.ExecContext(ctx, sqlstr, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt)
+	tr.CreatedAt = time.Now()
+	logf(sqlstr, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt)
+	res, err := db.ExecContext(ctx, sqlstr, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt)
 	if err != nil {
 		return logerror(err)
 	}
@@ -72,11 +75,11 @@ func (tr *TradeRecord) Update(ctx context.Context, db DB) error {
 	}
 	// update with primary key
 	const sqlstr = `UPDATE bitgin.trade_record SET ` +
-		`user_id = ?, cost = ?, cut_flag = ?, comment = ?, created_at = ? ` +
+		`user_id = ?, balance_diff = ?, point_diff = ?, balance = ?, point = ?, comment = ?, created_at = ? ` +
 		`WHERE id = ?`
 	// run
-	logf(sqlstr, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt, tr.ID)
-	if _, err := db.ExecContext(ctx, sqlstr, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt, tr.ID); err != nil {
+	logf(sqlstr, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt, tr.ID)
+	if _, err := db.ExecContext(ctx, sqlstr, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt, tr.ID); err != nil {
 		return logerror(err)
 	}
 	return nil
@@ -98,15 +101,15 @@ func (tr *TradeRecord) Upsert(ctx context.Context, db DB) error {
 	}
 	// upsert
 	const sqlstr = `INSERT INTO bitgin.trade_record (` +
-		`id, user_id, cost, cut_flag, comment, created_at` +
+		`id, user_id, balance_diff, point_diff, balance, point, comment, created_at` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?, ?` +
+		`?, ?, ?, ?, ?, ?, ?, ?` +
 		`)` +
 		` ON DUPLICATE KEY UPDATE ` +
-		`user_id = VALUES(user_id), cost = VALUES(cost), cut_flag = VALUES(cut_flag), comment = VALUES(comment), created_at = VALUES(created_at)`
+		`user_id = VALUES(user_id), balance_diff = VALUES(balance_diff), point_diff = VALUES(point_diff), balance = VALUES(balance), point = VALUES(point), comment = VALUES(comment), created_at = VALUES(created_at)`
 	// run
-	logf(sqlstr, tr.ID, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt)
-	if _, err := db.ExecContext(ctx, sqlstr, tr.ID, tr.UserID, tr.Cost, tr.CutFlag, tr.Comment, tr.CreatedAt); err != nil {
+	logf(sqlstr, tr.ID, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt)
+	if _, err := db.ExecContext(ctx, sqlstr, tr.ID, tr.UserID, tr.BalanceDiff, tr.PointDiff, tr.Balance, tr.Point, tr.Comment, tr.CreatedAt); err != nil {
 		return logerror(err)
 	}
 	// set exists
@@ -141,7 +144,7 @@ func (tr *TradeRecord) Delete(ctx context.Context, db DB) error {
 func TradeRecordByID(ctx context.Context, db DB, id int) (*TradeRecord, error) {
 	// query
 	const sqlstr = `SELECT ` +
-		`id, user_id, cost, cut_flag, comment, created_at ` +
+		`id, user_id, balance_diff, point_diff, balance, point, comment, created_at ` +
 		`FROM bitgin.trade_record ` +
 		`WHERE id = ?`
 	// run
@@ -149,7 +152,7 @@ func TradeRecordByID(ctx context.Context, db DB, id int) (*TradeRecord, error) {
 	tr := TradeRecord{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, id).Scan(&tr.ID, &tr.UserID, &tr.Cost, &tr.CutFlag, &tr.Comment, &tr.CreatedAt); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, id).Scan(&tr.ID, &tr.UserID, &tr.BalanceDiff, &tr.PointDiff, &tr.Balance, &tr.Point, &tr.Comment, &tr.CreatedAt); err != nil {
 		return nil, logerror(err)
 	}
 	return &tr, nil
@@ -161,7 +164,7 @@ func TradeRecordByID(ctx context.Context, db DB, id int) (*TradeRecord, error) {
 func TradeRecordByUserID(ctx context.Context, db DB, userID int) (*TradeRecord, error) {
 	// query
 	const sqlstr = `SELECT ` +
-		`id, user_id, cost, cut_flag, comment, created_at ` +
+		`id, user_id, balance_diff, point_diff, balance, point, comment, created_at ` +
 		`FROM bitgin.trade_record ` +
 		`WHERE user_id = ?`
 	// run
@@ -169,7 +172,7 @@ func TradeRecordByUserID(ctx context.Context, db DB, userID int) (*TradeRecord, 
 	tr := TradeRecord{
 		_exists: true,
 	}
-	if err := db.QueryRowContext(ctx, sqlstr, userID).Scan(&tr.ID, &tr.UserID, &tr.Cost, &tr.CutFlag, &tr.Comment, &tr.CreatedAt); err != nil {
+	if err := db.QueryRowContext(ctx, sqlstr, userID).Scan(&tr.ID, &tr.UserID, &tr.BalanceDiff, &tr.PointDiff, &tr.Balance, &tr.Point, &tr.Comment, &tr.CreatedAt); err != nil {
 		return nil, logerror(err)
 	}
 	return &tr, nil

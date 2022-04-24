@@ -1,17 +1,17 @@
 package database
 
-import "database/sql"
+import "github.com/jmoiron/sqlx"
 
-var dbconn *sql.DB
+var dbconn *sqlx.DB
 
 func init() {
 	dbconn = nil
 }
 
-func SetDB(db *sql.DB) {
+func SetDB(db *sqlx.DB) {
 	dbconn = db
 }
 
-func GetDB() *sql.DB {
+func GetDB() *sqlx.DB {
 	return dbconn
 }

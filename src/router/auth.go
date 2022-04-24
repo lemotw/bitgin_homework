@@ -4,7 +4,6 @@ import (
 	"BitginHomework/database"
 	"BitginHomework/model"
 	"BitginHomework/service/auth"
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,10 +19,7 @@ func Login(c *gin.Context) {
 
 	// parse param
 	if err := c.BindJSON(&loginJSON); err != nil {
-		c.JSON(500, gin.H{
-			"status":  500,
-			"message": err.Error(),
-		})
+		internalFaild(c, err.Error())
 		return
 	}
 
@@ -52,21 +48,14 @@ func SignUp(c *gin.Context) {
 
 	// parse param
 	if err := c.BindJSON(&signUpJSON); err != nil {
-		c.JSON(500, gin.H{
-			"status":  500,
-			"message": err.Error(),
-		})
+		internalFaild(c, err.Error())
 		return
 	}
 
 	// generate password hash
 	password_hash, err := bcrypt.GenerateFromPassword([]byte(signUpJSON.Password), 12)
 	if err != nil {
-		log.Println(err.Error())
-		c.JSON(500, gin.H{
-			"status":  500,
-			"message": err.Error(),
-		})
+		internalFaild(c, err.Error())
 		return
 	}
 
@@ -81,13 +70,17 @@ func SignUp(c *gin.Context) {
 	ctx := getContext(c)
 	err = user.Insert(*ctx, database.GetDB())
 	if err != nil {
-		log.Println(err.Error())
-		c.JSON(500, gin.H{
-			"status":  500,
-			"message": err.Error(),
-		})
+		internalFaild(c, err.Error())
 		return
 	}
+
+	// init user balance
+	userBalance := model.UserBalance{
+		UserID:  user.ID,
+		Balance: 0,
+		Point:   0,
+	}
+	userBalance.Insert(*ctx, database.GetDB())
 
 	c.JSON(200, gin.H{
 		"status": 200,

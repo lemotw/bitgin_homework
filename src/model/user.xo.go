@@ -45,6 +45,8 @@ func (u *User) Insert(ctx context.Context, db DB) error {
 		`?, ?, ?, ?, ?` +
 		`)`
 	// run
+	u.CreatedAt = time.Now()
+	u.UpdatedAt = time.Now()
 	logf(sqlstr, u.Email, u.Password, u.Role, u.UpdatedAt, u.CreatedAt)
 	res, err := db.ExecContext(ctx, sqlstr, u.Email, u.Password, u.Role, u.UpdatedAt, u.CreatedAt)
 	if err != nil {
@@ -74,6 +76,7 @@ func (u *User) Update(ctx context.Context, db DB) error {
 		`email = ?, password = ?, role = ?, updated_at = ?, created_at = ? ` +
 		`WHERE id = ?`
 	// run
+	u.UpdatedAt = time.Now()
 	logf(sqlstr, u.Email, u.Password, u.Role, u.UpdatedAt, u.CreatedAt, u.ID)
 	if _, err := db.ExecContext(ctx, sqlstr, u.Email, u.Password, u.Role, u.UpdatedAt, u.CreatedAt, u.ID); err != nil {
 		return logerror(err)

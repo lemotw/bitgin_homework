@@ -4,15 +4,16 @@ package model
 
 import (
 	"context"
+	"time"
 )
 
 // UserBalance represents a row from 'bitgin.user_balance'.
 type UserBalance struct {
-	ID        int     `json:"id"`         // id
-	UserID    int     `json:"user_id"`    // user_id
-	Balance   float64 `json:"balance"`    // balance
-	Point     int     `json:"point"`      // point
-	UpdatedAt int     `json:"updated_at"` // updated_at
+	ID        int       `json:"id"`         // id
+	UserID    int       `json:"user_id"`    // user_id
+	Balance   float64   `json:"balance"`    // balance
+	Point     int       `json:"point"`      // point
+	UpdatedAt time.Time `json:"updated_at"` // updated_at
 	// xo fields
 	_exists, _deleted bool
 }
@@ -43,6 +44,7 @@ func (ub *UserBalance) Insert(ctx context.Context, db DB) error {
 		`?, ?, ?, ?` +
 		`)`
 	// run
+	ub.UpdatedAt = time.Now()
 	logf(sqlstr, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt)
 	res, err := db.ExecContext(ctx, sqlstr, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt)
 	if err != nil {
@@ -72,6 +74,7 @@ func (ub *UserBalance) Update(ctx context.Context, db DB) error {
 		`user_id = ?, balance = ?, point = ?, updated_at = ? ` +
 		`WHERE id = ?`
 	// run
+	ub.UpdatedAt = time.Now()
 	logf(sqlstr, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt, ub.ID)
 	if _, err := db.ExecContext(ctx, sqlstr, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt, ub.ID); err != nil {
 		return logerror(err)
@@ -102,6 +105,7 @@ func (ub *UserBalance) Upsert(ctx context.Context, db DB) error {
 		` ON DUPLICATE KEY UPDATE ` +
 		`user_id = VALUES(user_id), balance = VALUES(balance), point = VALUES(point), updated_at = VALUES(updated_at)`
 	// run
+	ub.UpdatedAt = time.Now()
 	logf(sqlstr, ub.ID, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt)
 	if _, err := db.ExecContext(ctx, sqlstr, ub.ID, ub.UserID, ub.Balance, ub.Point, ub.UpdatedAt); err != nil {
 		return logerror(err)
@@ -155,7 +159,7 @@ func UserBalanceByID(ctx context.Context, db DB, id int) (*UserBalance, error) {
 // UserBalanceByUserID retrieves a row from 'bitgin.user_balance' as a UserBalance.
 //
 // Generated from index 'user_id'.
-func UserBalanceByUserID(ctx context.Context, db DB, userID int) ([]*UserBalance, error) {
+func UserBalanceByUserID(ctx context.Context, db DB, userID int) (*UserBalance, error) {
 	// query
 	const sqlstr = `SELECT ` +
 		`id, user_id, balance, point, updated_at ` +
@@ -163,25 +167,11 @@ func UserBalanceByUserID(ctx context.Context, db DB, userID int) ([]*UserBalance
 		`WHERE user_id = ?`
 	// run
 	logf(sqlstr, userID)
-	rows, err := db.QueryContext(ctx, sqlstr, userID)
-	if err != nil {
+	ub := UserBalance{
+		_exists: true,
+	}
+	if err := db.QueryRowContext(ctx, sqlstr, userID).Scan(&ub.ID, &ub.UserID, &ub.Balance, &ub.Point, &ub.UpdatedAt); err != nil {
 		return nil, logerror(err)
 	}
-	defer rows.Close()
-	// process
-	var res []*UserBalance
-	for rows.Next() {
-		ub := UserBalance{
-			_exists: true,
-		}
-		// scan
-		if err := rows.Scan(&ub.ID, &ub.UserID, &ub.Balance, &ub.Point, &ub.UpdatedAt); err != nil {
-			return nil, logerror(err)
-		}
-		res = append(res, &ub)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, logerror(err)
-	}
-	return res, nil
+	return &ub, nil
 }
