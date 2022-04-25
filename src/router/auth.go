@@ -1,6 +1,7 @@
 package router
 
 import (
+	"BitginHomework/config"
 	"BitginHomework/database"
 	"BitginHomework/model"
 	"BitginHomework/service/auth"
@@ -44,11 +45,18 @@ func SignUp(c *gin.Context) {
 	var signUpJSON struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		Role     string `json:"role"`
 	}
 
 	// parse param
 	if err := c.BindJSON(&signUpJSON); err != nil {
 		internalFaild(c, err.Error())
+		return
+	}
+
+	// check role legal or not
+	if !config.RoleLegal(signUpJSON.Role) {
+		internalFaild(c, "role not legal")
 		return
 	}
 

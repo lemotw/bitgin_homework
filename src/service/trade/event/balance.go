@@ -3,6 +3,7 @@ package event
 import (
 	"BitginHomework/config"
 	"BitginHomework/model"
+	"log"
 )
 
 func pointDiscount(p int) int {
@@ -13,17 +14,17 @@ func discountPoint(d int) int {
 }
 
 // help logic Upset
-func CostPoint(u model.User, record model.TradeRecord, val float64) error {
+func CostPoint(u model.User, record *model.TradeRecord, val float64) error {
 	record.PointDiff = -record.PointDiff
 	return nil
 }
-func CostBalance(u model.User, record model.TradeRecord, val float64) error {
+func CostBalance(u model.User, record *model.TradeRecord, val float64) error {
 	record.BalanceDiff = -record.BalanceDiff
 	return nil
 }
 
 // apply role discount
-func RoleDiscount(u model.User, record model.TradeRecord, val float64) error {
+func RoleDiscount(u model.User, record *model.TradeRecord, val float64) error {
 	switch u.Role {
 	case config.USERROLE_VIP1:
 		record.BalanceDiff = record.BalanceDiff * config.USERROLE_VIP1_DISCOUNT
@@ -39,7 +40,8 @@ func RoleDiscount(u model.User, record model.TradeRecord, val float64) error {
 }
 
 // apply point discount
-func PointDiscount(u model.User, record model.TradeRecord, val float64) error {
+func PointDiscount(u model.User, record *model.TradeRecord, val float64) error {
+	log.Println(record)
 	availableDiscount := int(val) / 1000
 	availableDiscount *= 100
 	discount := availableDiscount
@@ -55,7 +57,7 @@ func PointDiscount(u model.User, record model.TradeRecord, val float64) error {
 
 	discount = pointDiscount(pointUsed)
 	record.BalanceDiff -= float64(discount)
-	record.PointDiff -= pointUsed
+	record.PointDiff = pointUsed
 
 	return nil
 }

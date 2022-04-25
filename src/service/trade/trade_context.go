@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type EventFunc func(u model.User, trade *model.TradeRecord, cost float64) error
+type EventFunc func(u model.User, trade *model.TradeRecord, val float64) error
 
 type TradeContext struct {
 	EventList   []EventFunc
@@ -59,6 +59,7 @@ func (tc *TradeContext) UpdateBalance(ctx context.Context, balance model.UserBal
 
 	// store user balance
 	balance.Balance = tc.tradeRecord.Balance
+	balance.Point = tc.tradeRecord.Point
 	err = balance.Update(ctx, tx)
 	if err != nil {
 		tx.Rollback()

@@ -4,9 +4,7 @@ import (
 	"BitginHomework/config"
 	"BitginHomework/database"
 	"BitginHomework/middleware"
-	"BitginHomework/model"
 	"BitginHomework/router"
-	"context"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -34,31 +32,7 @@ func main() {
 	ginRouter.POST("/login", middleware.WithContext, router.Login)
 	ginRouter.POST("/signup", middleware.WithContext, router.SignUp)
 	ginRouter.POST("/deposite/in", middleware.WithContext, middleware.WithUser, router.DepositeInBalance)
-	ginRouter.POST("/test", func(c *gin.Context) {
-		ctx := context.Background()
-
-		// parse param
-		var depositeInJSON struct {
-			ID int `json:"id"`
-		}
-
-		// parse param
-		if err := c.BindJSON(&depositeInJSON); err != nil {
-			log.Println(err.Error())
-			return
-		}
-
-		ub := model.UserBalance{
-			UserID:  depositeInJSON.ID,
-			Balance: 0,
-			Point:   0,
-		}
-		err := ub.Insert(ctx, database.GetDB())
-		if err != nil {
-			log.Println(err.Error())
-		}
-		log.Println(ub.ID)
-	})
+	ginRouter.POST("/pay", middleware.WithContext, middleware.WithUser, router.PayByBalance)
 
 	ginRouter.Run()
 }

@@ -12,3 +12,13 @@ const (
 
 	POINT_EXCHANGE_RATE = 1
 )
+
+func RoleLegal(role string) bool {
+	roleList := []string{USERROLE_NORMAL, USERROLE_VIP1, USERROLE_VIP2, USERROLE_VIP3}
+	for _, role_str := range roleList {
+		if role == role_str {
+			return true
+		}
+	}
+	return false
+}
